@@ -1,13 +1,13 @@
 # Project Plan: Hanja Extraction & Dictionary MVP
 
 ## Goal
-Extract Hanja characters and words from documents, creating a local SQLite database containing character details (sound, meaning, radical) and usage examples.
+Extract Hanja characters and words from documents, creating a local SQLite database containing character details (sound, meaning, radical) and usage examples. Ultimately, serve this data via a FastAPI backend for a web application.
 
 ## Architecture
 - **Language**: Python
 - **Database**: SQLite
 - **ORM**: SQLAlchemy
-- **Entry Point**: `main.py`
+- **Entry Point**: `main.py` (CLI), `src/api.py` (FastAPI)
 - **Source Directory**: `src/`
 
 ## Roadmap
@@ -34,7 +34,23 @@ Extract Hanja characters and words from documents, creating a local SQLite datab
 - [x] **PDF Loader**: Implement PDF (`.pdf`) text extraction using `pypdf`.
 - [x] **CLI Arguments**: Update `main.py` to accept file paths via command line arguments (using `argparse`).
 
+### Phase 5: Advanced Data Management
+- [x] **Schema Refactoring**: `Document`, `RefHanja`, `DocumentHanja`, `DocumentWord`.
+- [x] **Dictionary Loader**: CSV loader to pre-seed `RefHanja`.
+- [x] **Idempotency Logic**: Prevent duplicate file processing.
+- [x] **Migration & Processing**: Reprocess all sample PDF files.
+
+### Phase 6: Backend API (New)
+- [ ] **FastAPI Setup**: Add `fastapi` and `uvicorn`.
+- [ ] **API Structure**: Create `src/api.py` or `src/routers/` for endpoints.
+- [ ] **Endpoint: Hanja Analysis**:
+    - `GET /analysis/hanja`: Top frequent characters with pagination.
+    - `GET /analysis/radicals`: Top frequent radicals with pagination.
+    - `GET /analysis/words`: Top frequent characters in words with pagination.
+- [ ] **Endpoint: Search**: Simple search for character or word.
+- [ ] **Response Models**: Define Pydantic models for clear API responses.
+
 ## Current Status
-- Multi-source support implemented and verified with text files.
-- PDF reading logic in place (requires PDF file for testing).
-- Project is fully functional for defined scope.
+- Data processing pipeline complete and verified.
+- DB fully populated with exam data.
+- Ready to build FastAPI backend (Phase 6).
