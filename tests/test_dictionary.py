@@ -26,7 +26,7 @@ def test_lookup_invalid_input(hanja_dict):
         hanja_dict.lookup("漢字")
     with pytest.raises(ValueError, match="한 글자의 한자만 전달해야 합니다."):
         hanja_dict.lookup("")
-    with pytest.raises(ValueError, match="한 글자의 한자만 전달해야 합니다."):
+    with pytest.raises(ValueError, match="입력된 문자는 한자가 아닙니다."):
         hanja_dict.lookup("A") # 영어는 한자로 처리하지 않음, 일단 한 글자 검증만
 
 def test_lookup_non_hanja_character(hanja_dict):
