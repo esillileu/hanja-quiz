@@ -1,13 +1,13 @@
 # Project Plan: Hanja Extraction & Dictionary MVP
 
 ## Goal
-Extract Hanja characters and words from documents, creating a local SQLite database containing character details (sound, meaning, radical) and usage examples. Ultimately, serve this data via a FastAPI backend for a web application.
+Extract Hanja characters and words from documents, creating a local SQLite database containing character details (sound, meaning, radical) and usage examples. Ultimately, serve this data via a Streamlit web application for analysis and learning.
 
 ## Architecture
 - **Language**: Python
 - **Database**: SQLite
 - **ORM**: SQLAlchemy
-- **Entry Point**: `main.py` (CLI), `src/api.py` (FastAPI)
+- **Frontend**: Streamlit
 - **Source Directory**: `src/`
 
 ## Roadmap
@@ -40,17 +40,20 @@ Extract Hanja characters and words from documents, creating a local SQLite datab
 - [x] **Idempotency Logic**: Prevent duplicate file processing.
 - [x] **Migration & Processing**: Reprocess all sample PDF files.
 
-### Phase 6: Backend API (New)
-- [ ] **FastAPI Setup**: Add `fastapi` and `uvicorn`.
-- [ ] **API Structure**: Create `src/api.py` or `src/routers/` for endpoints.
-- [ ] **Endpoint: Hanja Analysis**:
-    - `GET /analysis/hanja`: Top frequent characters with pagination.
-    - `GET /analysis/radicals`: Top frequent radicals with pagination.
-    - `GET /analysis/words`: Top frequent characters in words with pagination.
-- [ ] **Endpoint: Search**: Simple search for character or word.
-- [ ] **Response Models**: Define Pydantic models for clear API responses.
+### Phase 6: Backend API & Analysis
+- [x] **FastAPI Setup**: Add `fastapi` and `uvicorn`.
+- [x] **API Structure**: Create `src/api.py`.
+- [x] **Analysis Logic**: Implement top hanja/radical/word analysis.
+
+### Phase 7: Enhanced UI & Quiz Mode (New)
+- [ ] **Streamlit Layout**: Implement Sidebar navigation (Analysis vs Quiz).
+- [ ] **Quiz Logic Upgrade (`src/quiz.py`)**:
+    - Implement weighted random selection based on frequency.
+    - Implement filtering by radical.
+    - Implement 4 question types: Hanja->Meaning, Meaning->Hanja, Word->Sound, Sound->Word.
+- [ ] **Quiz UI**: Interactive quiz interface with immediate feedback and score tracking.
 
 ## Current Status
-- Data processing pipeline complete and verified.
-- DB fully populated with exam data.
-- Ready to build FastAPI backend (Phase 6).
+- Backend and Data processing complete.
+- Basic Streamlit app running.
+- Ready to upgrade to advanced Quiz UI (Phase 7).
