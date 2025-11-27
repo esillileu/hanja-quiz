@@ -18,6 +18,10 @@ class HanjaDictionary:
         if not char or len(char) != 1:
             raise ValueError("lookup 메소드에는 한 글자의 한자만 전달해야 합니다.")
 
+        # CJK Unified Ideographs 범위: U+4E00 ~ U+9FFF
+        if not ('\u4e00' <= char <= '\u9fff'):
+             raise ValueError("입력된 문자는 한자가 아닙니다.")
+
         sound = self._get_sound(char)
         
         # 부수, 뜻, 획수 정보는 현재 데이터 소스가 없으므로 플레이스홀더 사용
@@ -38,9 +42,9 @@ class HanjaDictionary:
         hanja 라이브러리를 사용하여 한자의 음을 가져옵니다.
         """
         # hanja.split_hanja는 한자의 음을 리스트로 반환합니다.
-        # 첫 번째 음을 사용하고, 없을 경우 빈 문자열 반환
+        # 예: [('漢', '한')]
         result = hanja.split_hanja(char)
         if result and isinstance(result, list) and len(result) > 0:
-            return result[0][0] # 예: ('漢', '한', '한나라 한') -> '한'
+             # result[0] -> ('漢', '한')
+            return result[0][1] 
         return ""
-
