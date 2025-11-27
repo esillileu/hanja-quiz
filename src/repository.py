@@ -128,7 +128,7 @@ class HanjaRepository:
     def get_flat_progress(self, session):
         """
         Returns a flat list of user progress for CSV export.
-        Format: [{'type': 'hanja'/'word', 'target': char/word, 'meaning_sound': ..., 'importance_level': ...}]
+        Format: [{'type': 'hanja'/'word', 'target': char/word, 'meaning': ..., 'sound': ..., 'importance_level': ...}]
         """
         results = []
         
@@ -137,11 +137,13 @@ class HanjaRepository:
         for up in hanja_progress:
             if up.hanja:
                 reading = up.hanja.readings[0] if up.hanja.readings else None
-                meaning_sound = f"{reading.meaning} {reading.sound}" if reading else ""
+                meaning = reading.meaning if reading else ""
+                sound = reading.sound if reading else ""
                 results.append({
                     'type': 'hanja',
                     'target': up.hanja.char,
-                    'meaning_sound': meaning_sound,
+                    'meaning': meaning,
+                    'sound': sound,
                     'importance_level': up.importance_level
                 })
         
@@ -152,7 +154,8 @@ class HanjaRepository:
                 results.append({
                     'type': 'word',
                     'target': up.word.word,
-                    'meaning_sound': up.word.sound or "",
+                    'meaning': "", # Words don't typically have 'meaning' field in this schema, sound is key
+                    'sound': up.word.sound or "",
                     'importance_level': up.importance_level
                 })
                 
@@ -161,35 +164,58 @@ class HanjaRepository:
     def import_progress_data(self, session, data_list):
         """
         Imports progress data from a list of dicts.
-        Updates existing UserProgress or creates new ones if Hanja/Word exists.
+        Creates Hanja/Word/Readings if they don't exist, then updates UserProgress.
         """
         count = 0
         for item in data_list:
             target = item.get('target')
             p_type = item.get('type')
-            level = int(item.get('importance_level', 5))
+            meaning = item.get('meaning', "")
+            sound = item.get('sound', "")
+            try:
+                level = int(item.get('importance_level', 5))
+            except (ValueError, TypeError):
+                level = 5
             
             if not target or not p_type:
                 continue
                 
             if p_type == 'hanja':
                 hanja = session.query(HanjaInfo).filter_by(char=target).first()
-                if hanja:
-                    up = session.query(UserProgress).filter_by(hanja_id=hanja.id).first()
-                    if up:
-                        up.importance_level = level
-                    else:
-                        session.add(UserProgress(hanja_id=hanja.id, importance_level=level))
-                    count += 1
+                if not hanja:
+                    # Create new Hanja if not exists
+                    hanja = HanjaInfo(char=target, radical="?", strokes=0) # Default placeholders
+                    session.add(hanja)
+                    session.flush() # Get ID
+                    
+                    # Add Reading
+                    reading = HanjaReading(hanja_id=hanja.id, sound=sound, meaning=meaning)
+                    session.add(reading)
+                
+                # Create/Update Progress
+                up = session.query(UserProgress).filter_by(hanja_id=hanja.id).first()
+                if up:
+                    up.importance_level = level
+                else:
+                    session.add(UserProgress(hanja_id=hanja.id, importance_level=level))
+                count += 1
+
             elif p_type == 'word':
                 word = session.query(UsageExample).filter_by(word=target).first()
-                if word:
-                    up = session.query(UserProgress).filter_by(word_id=word.id).first()
-                    if up:
-                        up.importance_level = level
-                    else:
-                        session.add(UserProgress(word_id=word.id, importance_level=level))
-                    count += 1
+                if not word:
+                    # Create new Word if not exists
+                    word = UsageExample(word=target, sound=sound)
+                    session.add(word)
+                    session.flush()
+                
+                # Create/Update Progress
+                up = session.query(UserProgress).filter_by(word_id=word.id).first()
+                if up:
+                    up.importance_level = level
+                else:
+                    session.add(UserProgress(word_id=word.id, importance_level=level))
+                count += 1
+                
         session.commit()
         return count
 

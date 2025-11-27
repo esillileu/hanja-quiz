@@ -56,7 +56,7 @@ if mode == "💾 데이터 관리":
             try:
                 df_import = pd.read_csv(uploaded_file)
                 # Validate columns
-                required_cols = {'type', 'target', 'importance_level'}
+                required_cols = {'type', 'target', 'meaning', 'sound', 'importance_level'}
                 if not required_cols.issubset(df_import.columns):
                     st.error(f"CSV 파일 형식이 올바르지 않습니다. 필요 컬럼: {required_cols}")
                 else:
