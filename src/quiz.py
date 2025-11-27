@@ -8,21 +8,48 @@ class QuizGenerator:
 
     def get_weighted_hanja(self, session, limit=100, radical=None):
         """
-        Fetch top frequent Hanjas.
-        If radical is provided, filter by it.
+        Fetch Hanjas weighted by importance level (SRS).
+        Default importance is 5.
         """
-        query = session.query(
-            HanjaInfo, 
-            func.sum(DocumentHanja.frequency).label('total_freq')
-        ).join(DocumentHanja)
-        
+        # 1. Fetch all Hanja candidates (filtered by radical if needed)
+        query = session.query(HanjaInfo)
         if radical:
             query = query.filter(HanjaInfo.radical == radical)
-            
-        results = query.group_by(HanjaInfo.id).order_by(desc('total_freq')).limit(limit).all()
         
-        # Return list of (hanja, weight)
-        return [(r[0], r[1]) for r in results]
+        # Use a reasonable limit to avoid fetching too many if DB is huge, 
+        # but for SRS we ideally want to consider many.
+        # For now, let's fetch up to 1000 candidates to pick from.
+        candidates = query.limit(1000).all()
+        
+        if not candidates:
+            return []
+
+        # 2. Fetch Progress for these candidates
+        candidate_ids = [h.id for h in candidates]
+        progress_map = {}
+        progress_entries = session.query(UserProgress).filter(UserProgress.hanja_id.in_(candidate_ids)).all()
+        for p in progress_entries:
+            progress_map[p.hanja_id] = p.importance_level
+            
+        # 3. Build weighted list
+        weighted_candidates = []
+        for h in candidates:
+            weight = progress_map.get(h.id, 5) # Default weight 5
+            # Ensure weight is at least 1 to give a chance to 'mastered' items (optional, or keep 0 to hide)
+            # Let's give at least small chance even if 0? Or strict 0? 
+            # Requirement: "higher importance -> more frequent". 0 means master.
+            # Let's set min weight to 1 so they can still appear rarely, or 0.1.
+            # User asked: "Importance 5 start... wrong +1, correct -1".
+            # Let's use weight = importance_level + 1 to avoid 0 weight issues if we want them to appear eventually.
+            # Or if importance 0 means "never show", then 0.
+            # Usually SRS keeps showing them but very rarely.
+            adjusted_weight = weight + 1 
+            weighted_candidates.append((h, adjusted_weight))
+            
+        # Sort by weight desc for "top" preview, though random selection doesn't strictly need sort
+        weighted_candidates.sort(key=lambda x: x[1], reverse=True)
+        
+        return weighted_candidates[:limit]
 
     def generate_quiz(self, mode='random', q_type='hanja_to_meaning', radical=None, min_importance_level=0):
         """

@@ -138,127 +138,270 @@ elif mode == "📝 실전 퀴즈":
         else:
             st.error("문제를 생성할 수 없습니다. (데이터 부족 또는 현재 중요도 레벨에 해당되는 항목 없음)")
 
-    def check(ans):
-        question = st.session_state.quiz_state['q_data']
-        correct = question['correct']
-        st.session_state.quiz_state['total'] += 1
-        
-        db = SessionLocal() # Separate DB session for check function
-        try:
-            if ans == correct:
-                st.session_state.quiz_state['score'] += 1
-                st.session_state.quiz_state['result'] = 'correct'
-                
-                # Decrease importance level
-                repository.update_importance_level(
-                    db, 
-                    hanja_id=question.get('hanja_id'), 
-                    word_id=question.get('word_id'), 
-                    change=-1
-                )
-                db.commit()
+        def check(ans):
 
-            else:
-                st.session_state.quiz_state['result'] = 'wrong'
-                # Increase importance level
-                repository.update_importance_level(
-                    db, 
-                    hanja_id=question.get('hanja_id'), 
-                    word_id=question.get('word_id'), 
-                    change=+1
-                )
-                db.commit()
-        finally:
-            db.close()
+            question = st.session_state.quiz_state['q_data']
 
+            correct = question['correct']
 
-    # Main Quiz Area
-    if st.session_state.quiz_state['q_data'] is None:
-        if st.button("퀴즈 시작하기", type="primary", use_container_width=True):
-            next_question()
-            st.rerun()
-    else:
-        q = st.session_state.quiz_state['q_data']
-        
-        # Score Board
-        col1, col2, col3 = st.columns(3)
-        col1.metric("맞춘 문제", st.session_state.quiz_state['score'])
-        col2.metric("푼 문제", st.session_state.quiz_state['total'])
-        if st.session_state.quiz_state['total'] > 0:
-            acc = (st.session_state.quiz_state['score'] / st.session_state.quiz_state['total']) * 100
-            col3.metric("정답률", f"{acc:.1f}%")
+            st.session_state.quiz_state['total'] += 1
 
-        st.divider()
-
-        # Question Display
-        st.markdown(f"<div style='text-align: center; font-size: 20px;'>다음은 무엇입니까?</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='text-align: center; font-size: 80px; font-weight: bold; color: #333; margin: 20px 0;'>{q['q_text']}</div>", unsafe_allow_html=True)
-        
-        if q.get('info'):
-            st.info(f"💡 힌트: {q['info']}")
-
-        # Options
-        if st.session_state.quiz_state['result'] is None:
-            cols = st.columns(2)
-            for i, opt in enumerate(q['options']):
-                if cols[i % 2].button(opt, key=f"opt_{i}", use_container_width=True):
-                    check(opt)
-                    st.rerun()
-        else:
-            # Result Display
-            if st.session_state.quiz_state['result'] == 'correct':
-                st.success(f"⭕ 정답입니다! 🎉 ({q['correct']})")
-            else:
-                st.error(f"❌ 틀렸습니다. 정답은 **{q['correct']}** 입니다.")
             
-            if st.button("다음 문제 👉", type="primary", use_container_width=True):
+
+            db = SessionLocal() # Separate DB session for check function
+
+            try:
+
+                if ans == correct:
+
+                    st.session_state.quiz_state['score'] += 1
+
+                    st.session_state.quiz_state['result'] = 'correct'
+
+                    
+
+                    # Decrease importance level
+
+                    progress = repository.update_importance_level(
+
+                        db, 
+
+                        hanja_id=question.get('hanja_id'), 
+
+                        word_id=question.get('word_id'), 
+
+                        change=-1
+
+                    )
+
+                    db.commit()
+
+                    st.session_state.quiz_state['new_level'] = progress.importance_level
+
+    
+
+                else:
+
+                    st.session_state.quiz_state['result'] = 'wrong'
+
+                    # Increase importance level
+
+                    progress = repository.update_importance_level(
+
+                        db, 
+
+                        hanja_id=question.get('hanja_id'), 
+
+                        word_id=question.get('word_id'), 
+
+                        change=+1
+
+                    )
+
+                    db.commit()
+
+                    st.session_state.quiz_state['new_level'] = progress.importance_level
+
+            finally:
+
+                db.close()
+
+    
+
+        # Main Quiz Area
+
+        if st.session_state.quiz_state['q_data'] is None:
+
+            st.info("💡 퀴즈 전략: 모든 단어는 기본 중요도 **Lv.5**로 시작합니다. 맞추면 **-1**, 틀리면 **+1** 됩니다. 중요도가 높을수록 더 자주 출제됩니다.")
+
+            if st.button("퀴즈 시작하기", type="primary", use_container_width=True):
+
                 next_question()
+
                 st.rerun()
 
-# --- Mode 3: User Progress / Importance Status ---
-elif mode == "📈 학습 현황":
-    st.title("학습 현황")
-    
-    db = SessionLocal()
-    try:
-        st.subheader("중요도별 한자 현황")
-        hanja_progress = db.query(UserProgress).filter(UserProgress.hanja_id != None).order_by(UserProgress.importance_level.desc(), UserProgress.last_tested_at.asc()).all()
-        
-        if hanja_progress:
-            df_hanja_progress = []
-            for up in hanja_progress:
-                hanja = up.hanja
-                reading = hanja.readings[0] if hanja and hanja.readings else None
-                meaning_sound = f"{reading.meaning} {reading.sound}" if reading else "정보 없음"
-                df_hanja_progress.append({
-                    "한자": hanja.char if hanja else "없음",
-                    "훈음": meaning_sound,
-                    "부수": hanja.radical if hanja else "없음",
-                    "중요도 레벨": up.importance_level,
-                    "마지막 학습일": up.last_tested_at.strftime("%Y-%m-%d %H:%M")
-                })
-            st.dataframe(pd.DataFrame(df_hanja_progress), use_container_width=True)
         else:
-            st.info("아직 학습한 한자가 없습니다. 퀴즈를 풀어 중요도를 높여보세요!")
 
-        st.divider()
+            q = st.session_state.quiz_state['q_data']
 
-        st.subheader("중요도별 단어 현황")
-        word_progress = db.query(UserProgress).filter(UserProgress.word_id != None).order_by(UserProgress.importance_level.desc(), UserProgress.last_tested_at.asc()).all()
-
-        if word_progress:
-            df_word_progress = []
-            for up in word_progress:
-                word = up.word
-                df_word_progress.append({
-                    "단어": word.word if word else "없음",
-                    "음": word.sound if word else "없음",
-                    "중요도 레벨": up.importance_level,
-                    "마지막 학습일": up.last_tested_at.strftime("%Y-%m-%d %H:%M")
-                })
-            st.dataframe(pd.DataFrame(df_word_progress), use_container_width=True)
-        else:
-            st.info("아직 학습한 단어가 없습니다. 퀴즈를 풀어 중요도를 높여보세요!")
             
-    finally:
-        db.close()
+
+            # Score Board
+
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("맞춘 문제", st.session_state.quiz_state['score'])
+
+            col2.metric("푼 문제", st.session_state.quiz_state['total'])
+
+            if st.session_state.quiz_state['total'] > 0:
+
+                acc = (st.session_state.quiz_state['score'] / st.session_state.quiz_state['total']) * 100
+
+                col3.metric("정답률", f"{acc:.1f}%")
+
+    
+
+            st.divider()
+
+    
+
+            # Question Display
+
+            st.markdown(f"<div style='text-align: center; font-size: 20px;'>다음은 무엇입니까?</div>", unsafe_allow_html=True)
+
+            st.markdown(f"<div style='text-align: center; font-size: 80px; font-weight: bold; color: #333; margin: 20px 0;'>{q['q_text']}</div>", unsafe_allow_html=True)
+
+            
+
+            if q.get('info'):
+
+                st.info(f"💡 힌트: {q['info']}")
+
+    
+
+            # Options
+
+            if st.session_state.quiz_state['result'] is None:
+
+                cols = st.columns(2)
+
+                for i, opt in enumerate(q['options']):
+
+                    if cols[i % 2].button(opt, key=f"opt_{i}", use_container_width=True):
+
+                        check(opt)
+
+                        st.rerun()
+
+            else:
+
+                # Result Display
+
+                new_lv = st.session_state.quiz_state.get('new_level', '?')
+
+                if st.session_state.quiz_state['result'] == 'correct':
+
+                    st.success(f"⭕ 정답입니다! 🎉 ({q['correct']})")
+
+                    st.caption(f"📉 중요도 감소! 현재 레벨: **Lv.{new_lv}**")
+
+                else:
+
+                    st.error(f"❌ 틀렸습니다. 정답은 **{q['correct']}** 입니다.")
+
+                    st.caption(f"📈 중요도 증가! 현재 레벨: **Lv.{new_lv}**")
+
+                
+
+                if st.button("다음 문제 👉", type="primary", use_container_width=True):
+
+                    next_question()
+
+                    st.rerun()
+
+    
+
+    # --- Mode 3: User Progress / Importance Status ---
+
+    elif mode == "📈 학습 현황":
+
+        st.title("학습 현황")
+
+        
+
+        db = SessionLocal()
+
+        try:
+
+            st.markdown("### 중요도 분포")
+
+            # Show distribution chart or summary
+
+            
+
+            st.subheader("학습 중인 한자 (Lv.1 이상)")
+
+            hanja_progress = db.query(UserProgress).filter(UserProgress.hanja_id != None).order_by(UserProgress.importance_level.desc(), UserProgress.last_tested_at.asc()).all()
+
+            
+
+            if hanja_progress:
+
+                df_hanja_progress = []
+
+                for up in hanja_progress:
+
+                    hanja = up.hanja
+
+                    reading = hanja.readings[0] if hanja and hanja.readings else None
+
+                    meaning_sound = f"{reading.meaning} {reading.sound}" if reading else "정보 없음"
+
+                    df_hanja_progress.append({
+
+                        "한자": hanja.char if hanja else "없음",
+
+                        "훈음": meaning_sound,
+
+                        "부수": hanja.radical if hanja else "없음",
+
+                        "중요도 레벨": up.importance_level,
+
+                        "상태": "🔥 집중 학습" if up.importance_level > 5 else ("✅ 안정" if up.importance_level < 3 else "⚠️ 보통"),
+
+                        "마지막 학습일": up.last_tested_at.strftime("%Y-%m-%d %H:%M")
+
+                    })
+
+                st.dataframe(pd.DataFrame(df_hanja_progress), use_container_width=True)
+
+            else:
+
+                st.info("아직 학습 기록이 없습니다. 퀴즈를 풀어보세요!")
+
+    
+
+            st.divider()
+
+    
+
+            st.subheader("학습 중인 단어 (Lv.1 이상)")
+
+            word_progress = db.query(UserProgress).filter(UserProgress.word_id != None).order_by(UserProgress.importance_level.desc(), UserProgress.last_tested_at.asc()).all()
+
+    
+
+            if word_progress:
+
+                df_word_progress = []
+
+                for up in word_progress:
+
+                    word = up.word
+
+                    df_word_progress.append({
+
+                        "단어": word.word if word else "없음",
+
+                        "음": word.sound if word else "없음",
+
+                        "중요도 레벨": up.importance_level,
+
+                        "상태": "🔥 집중 학습" if up.importance_level > 5 else ("✅ 안정" if up.importance_level < 3 else "⚠️ 보통"),
+
+                        "마지막 학습일": up.last_tested_at.strftime("%Y-%m-%d %H:%M")
+
+                    })
+
+                st.dataframe(pd.DataFrame(df_word_progress), use_container_width=True)
+
+            else:
+
+                st.info("아직 학습 기록이 없습니다. 퀴즈를 풀어보세요!")
+
+                
+
+        finally:
+
+            db.close()

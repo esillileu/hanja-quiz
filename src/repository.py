@@ -93,17 +93,21 @@ class HanjaRepository:
         if not (hanja_id or word_id):
             raise ValueError("Either hanja_id or word_id must be provided.")
 
+        progress = None
         if hanja_id:
             progress = session.query(UserProgress).filter_by(hanja_id=hanja_id).first()
             if not progress:
-                progress = UserProgress(hanja_id=hanja_id, importance_level=max(0, change))
+                # Default start level is 5. If correct (-1) -> 4, if wrong (+1) -> 6
+                initial_level = 5
+                progress = UserProgress(hanja_id=hanja_id, importance_level=max(0, initial_level + change))
                 session.add(progress)
             else:
                 progress.importance_level = max(0, progress.importance_level + change)
         elif word_id:
             progress = session.query(UserProgress).filter_by(word_id=word_id).first()
             if not progress:
-                progress = UserProgress(word_id=word_id, importance_level=max(0, change))
+                initial_level = 5
+                progress = UserProgress(word_id=word_id, importance_level=max(0, initial_level + change))
                 session.add(progress)
             else:
                 progress.importance_level = max(0, progress.importance_level + change)

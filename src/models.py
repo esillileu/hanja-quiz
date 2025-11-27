@@ -119,7 +119,7 @@ class UserProgress(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     hanja_id = Column(Integer, ForeignKey("hanja_info.id"), nullable=True, unique=True) # Hanja and word progress are mutually exclusive and unique
     word_id = Column(Integer, ForeignKey("usage_examples.id"), nullable=True, unique=True) # Hanja and word progress are mutually exclusive and unique
-    importance_level = Column(Integer, default=0) # 0: new, 1+: needs review (higher = more important)
+    importance_level = Column(Integer, default=5) # 5: default, 0: master, >5: hard
     last_tested_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     hanja = relationship("HanjaInfo")
