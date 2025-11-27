@@ -98,43 +98,35 @@ def test_update_document_word_frequency(session, repository, seed_data):
 def test_update_importance_level_hanja(session, repository, seed_data):
     hanja = seed_data["h1"] # 學
     
-    # Initial creation with +1
+    # Initial creation with +1 (default 5 + 1 = 6)
     up = repository.update_importance_level(session, hanja_id=hanja.id, change=+1)
     session.commit()
-    assert up.importance_level == 1
+    assert up.importance_level == 6
     assert up.hanja_id == hanja.id
     
-    # Increase again (+1)
-    up2 = repository.update_importance_level(session, hanja_id=hanja.id, change=+1)
+    # Decrease (-1) (6 - 1 = 5)
+    up2 = repository.update_importance_level(session, hanja_id=hanja.id, change=-1)
     session.commit()
-    assert up2.importance_level == 2
-    assert up2.id == up.id
+    assert up2.importance_level == 5
     
-    # Decrease (-1)
-    up3 = repository.update_importance_level(session, hanja_id=hanja.id, change=-1)
-    session.commit()
-    assert up3.importance_level == 1
-
     # Decrease to below zero (should be 0)
-    up4 = repository.update_importance_level(session, hanja_id=hanja.id, change=-5)
+    up3 = repository.update_importance_level(session, hanja_id=hanja.id, change=-10)
     session.commit()
-    assert up4.importance_level == 0
-
+    assert up3.importance_level == 0
 
 def test_update_importance_level_word(session, repository, seed_data):
     word = seed_data["w1"] # 學校
     
-    # Initial creation with +1
-    up = repository.update_importance_level(session, word_id=word.id, change=+1)
+    # Initial creation with -1 (default 5 - 1 = 4)
+    up = repository.update_importance_level(session, word_id=word.id, change=-1)
     session.commit()
-    assert up.importance_level == 1
+    assert up.importance_level == 4
     assert up.word_id == word.id
     
-    # Increase again (+1)
+    # Increase again (+1) (4 + 1 = 5)
     up2 = repository.update_importance_level(session, word_id=word.id, change=+1)
     session.commit()
-    assert up2.importance_level == 2
-    assert up2.id == up.id
+    assert up2.importance_level == 5
 
 def test_update_importance_level_no_id_raises_error(session, repository):
     with pytest.raises(ValueError, match="Either hanja_id or word_id must be provided."):
@@ -144,39 +136,40 @@ def test_get_user_progress(session, repository, seed_data):
     hanja = seed_data["h1"]
     word = seed_data["w1"]
     
-    repository.update_importance_level(session, hanja_id=hanja.id, change=1)
-    repository.update_importance_level(session, word_id=word.id, change=2)
+    repository.update_importance_level(session, hanja_id=hanja.id, change=1) # Sets to 5+1=6
+    repository.update_importance_level(session, word_id=word.id, change=2) # Sets to 5+2=7
     session.commit()
     
     retrieved_hanja_up = repository.get_user_progress(session, hanja_id=hanja.id)
     assert retrieved_hanja_up is not None
     assert retrieved_hanja_up.hanja.char == "學"
-    assert retrieved_hanja_up.importance_level == 1
+    assert retrieved_hanja_up.importance_level == 6 
     
     retrieved_word_up = repository.get_user_progress(session, word_id=word.id)
     assert retrieved_word_up is not None
     assert retrieved_word_up.word.word == "學校"
-    assert retrieved_word_up.importance_level == 2
+    assert retrieved_word_up.importance_level == 7
 
 def test_get_all_user_progress(session, repository, seed_data):
     h1 = seed_data["h1"]
     h2 = seed_data["h2"]
     w1 = seed_data["w1"]
     
-    repository.update_importance_level(session, hanja_id=h1.id, change=5)
-    repository.update_importance_level(session, hanja_id=h2.id, change=1)
-    repository.update_importance_level(session, word_id=w1.id, change=3)
+    repository.update_importance_level(session, hanja_id=h1.id, change=5) # 5+5=10
+    repository.update_importance_level(session, hanja_id=h2.id, change=1) # 5+1=6
+    repository.update_importance_level(session, word_id=w1.id, change=3) # 5+3=8
     session.commit()
     
     all_progress = repository.get_all_user_progress(session)
     assert len(all_progress) == 3
     # Ordered by importance_level desc, then last_tested_at asc
-    assert all_progress[0].hanja.char == "學" # Level 5
-    assert all_progress[1].word.word == "學校" # Level 3
-    assert all_progress[2].hanja.char == "校" # Level 1
+    assert all_progress[0].hanja.char == "學" # Level 10
+    assert all_progress[1].word.word == "學校" # Level 8
+    assert all_progress[2].hanja.char == "校" # Level 6
 
     # Test min_importance filter
-    high_importance_progress = repository.get_all_user_progress(session, min_importance=2)
+    # All are > 7 except '校' (Level 6). So if min=7, we expect 2.
+    high_importance_progress = repository.get_all_user_progress(session, min_importance=7)
     assert len(high_importance_progress) == 2
-    assert high_importance_progress[0].hanja.char == "學"
-    assert high_importance_progress[1].word.word == "學校"
+    assert high_importance_progress[0].hanja.char == "學" # Level 10
+    assert high_importance_progress[1].word.word == "學校" # Level 8

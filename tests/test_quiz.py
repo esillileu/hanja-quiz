@@ -15,38 +15,41 @@ def session():
     h1 = HanjaInfo(char="學", radical="子", strokes=16)
     h2 = HanjaInfo(char="校", radical="木", strokes=10)
     h3 = HanjaInfo(char="生", radical="生", strokes=5)
-    h4 = HanjaInfo(char="人", radical="人", strokes=2) # Added for distractors
-    session.add_all([h1, h2, h3, h4])
+    h4 = HanjaInfo(char="人", radical="人", strokes=2)
+    h5 = HanjaInfo(char="山", radical="山", strokes=3)
+    h6 = HanjaInfo(char="水", radical="水", strokes=4)
+    h7 = HanjaInfo(char="天", radical="大", strokes=4)
+    session.add_all([h1, h2, h3, h4, h5, h6, h7])
     session.flush() # Assign IDs
     
     session.add_all([
         HanjaReading(hanja_id=h1.id, sound="학", meaning="배울"),
         HanjaReading(hanja_id=h2.id, sound="교", meaning="학교"),
         HanjaReading(hanja_id=h3.id, sound="생", meaning="날"),
-        HanjaReading(hanja_id=h4.id, sound="인", meaning="사람")
+        HanjaReading(hanja_id=h4.id, sound="인", meaning="사람"),
+        HanjaReading(hanja_id=h5.id, sound="산", meaning="메"),
+        HanjaReading(hanja_id=h6.id, sound="수", meaning="물"),
+        HanjaReading(hanja_id=h7.id, sound="천", meaning="하늘")
     ])
     
-    w1 = UsageExample(word="學校", sound="학교")
-    w2 = UsageExample(word="學生", sound="학생")
-    w3 = UsageExample(word="先生", sound="선생")
-    w4 = UsageExample(word="人生", sound="인생")
-    w5 = UsageExample(word="國語", sound="국어")
-    w6 = UsageExample(word="數學", sound="수학")
-    w7 = UsageExample(word="科學", sound="과학")
-    w8 = UsageExample(word="英語", sound="영어")
-    w9 = UsageExample(word="歷史", sound="역사")
-    w10 = UsageExample(word="美術", sound="미술")
-    w11 = UsageExample(word="音樂", sound="음악")
-    w12 = UsageExample(word="體育", sound="체육")
-    w13 = UsageExample(word="世界", sound="세계")
-    w14 = UsageExample(word="文化", sound="문화")
-    w15 = UsageExample(word="學習", sound="학습")
-    w16 = UsageExample(word="知識", sound="지식")
-    w17 = UsageExample(word="智慧", sound="지혜")
-    w18 = UsageExample(word="幸福", sound="행복")
-    w19 = UsageExample(word="希望", sound="희망")
-    w20 = UsageExample(word="成功", sound="성공")
-    session.add_all([w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, w16, w17, w18, w19, w20])
+    # Massively expanded UsageExample seed data for robust distractor generation
+    words_data = [
+        ("學校", "학교"), ("學生", "학생"), ("先生", "선생"), ("人生", "인생"),
+        ("國語", "국어"), ("數學", "수학"), ("科學", "과학"), ("英語", "영어"),
+        ("歷史", "역사"), ("美術", "미술"), ("音樂", "음악"), ("體育", "체육"),
+        ("世界", "세계"), ("文化", "문화"), ("學習", "학습"), ("知識", "지식"),
+        ("智慧", "지혜"), ("幸福", "행복"), ("希望", "희망"), ("成功", "성공"),
+        ("友情", "우정"), ("愛情", "애정"), ("平和", "평화"), ("自由", "자유"),
+        ("正義", "정의"), ("民主", "민주"), ("共和", "공화"), ("統一", "통일"),
+        ("獨立", "독립"), ("發展", "발전"), ("創造", "창조"), ("革新", "혁신"),
+        ("未來", "미래"), ("過去", "과거"), ("現在", "현재"), ("變化", "변화"),
+        ("思想", "사상"), ("哲學", "철학"), ("文學", "문학"), ("藝術", "예술"),
+        ("國家", "국가"), ("社會", "사회"), ("經濟", "경제"), ("政治", "정치"),
+        ("法律", "법률"), ("道德", "도덕"), ("教育", "교육"), ("健康", "건강"),
+        ("自然", "자연"), ("環境", "환경"), ("科學技術", "과학기술"), ("情報", "정보")
+    ]
+    w_objs = [UsageExample(word=w, sound=s) for w, s in words_data]
+    session.add_all(w_objs)
     session.flush() # Assign IDs
     
     # Add Document Frequencies (for weighted random hanja quiz)
@@ -60,7 +63,7 @@ def session():
     # Seed UserProgress for importance review quiz
     up_h1 = UserProgress(hanja_id=h1.id, importance_level=5) # 學 - level 5
     up_h2 = UserProgress(hanja_id=h2.id, importance_level=1) # 校 - level 1
-    up_w1 = UserProgress(word_id=w1.id, importance_level=3)  # 學校 - level 3
+    up_w1 = UserProgress(word_id=w_objs[0].id, importance_level=3)  # 學校 - level 3
     session.add_all([up_h1, up_h2, up_w1])
 
     session.commit()
@@ -104,7 +107,9 @@ def test_generate_quiz_hanja_random(quiz_gen):
     q = quiz_gen.generate_quiz(mode='random', q_type='meaning_to_hanja')
     assert q is not None
     assert "q_text" in q
-    assert q['correct'] in ["學", "校", "生", "人"]
+    # Allow any of the seeded hanjas (h1~h7)
+    possible_answers = ["學", "校", "生", "人", "山", "水", "天"]
+    assert q['correct'] in possible_answers 
     assert q['hanja_id'] is not None
 
 def test_generate_quiz_word(quiz_gen):
