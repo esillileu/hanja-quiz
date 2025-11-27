@@ -19,7 +19,7 @@ Extract Hanja characters and words from documents, creating a local SQLite datab
 - [x] Create project plan (`docs/plan.md`)
 
 ### Phase 2: Core Implementation
-- [ ] **Models**: Implement SQLAlchemy models in `src/models.py`
+- [x] **Models**: Implement SQLAlchemy models in `src/models.py`
 - [ ] **Dictionary**: Implement Hanja info lookup (sound, meaning, radical) in `src/dictionary.py`
 - [ ] **Extractor**: Implement Regex-based text parsing in `src/extractor.py`
 - [ ] **Repository**: Implement DB operations in `src/repository.py`
