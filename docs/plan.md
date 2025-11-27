@@ -45,15 +45,28 @@ Extract Hanja characters and words from documents, creating a local SQLite datab
 - [x] **API Structure**: Create `src/api.py`.
 - [x] **Analysis Logic**: Implement top hanja/radical/word analysis.
 
-### Phase 7: Enhanced UI & Quiz Mode (New)
-- [ ] **Streamlit Layout**: Implement Sidebar navigation (Analysis vs Quiz).
-- [ ] **Quiz Logic Upgrade (`src/quiz.py`)**:
-    - Implement weighted random selection based on frequency.
-    - Implement filtering by radical.
-    - Implement 4 question types: Hanja->Meaning, Meaning->Hanja, Word->Sound, Sound->Word.
-- [ ] **Quiz UI**: Interactive quiz interface with immediate feedback and score tracking.
+### Phase 7: Enhanced UI & Quiz Mode
+- [x] **Streamlit Layout**: Implement Sidebar navigation (Analysis vs Quiz).
+- [x] **Quiz Logic Upgrade (`src/quiz.py`)**: Weighted random, radical filtering, various question types.
+- [x] **Quiz UI**: Interactive quiz interface.
+
+### Phase 8: Incorrect Answer Note (Mistake Tracker)
+- [x] **Schema Update**: Create `WrongAnswer` table.
+- [x] **Repository Update**: Add methods to record wrong answers (`record_mistake`).
+- [x] **Quiz Logic Upgrade**: Add "Mistake Review" mode.
+- [x] **UI Update**: Add "오답노트" tab and "오답 복습" quiz mode.
+
+### Phase 9: Importance-based Learning (New)
+- [ ] **Schema Update**: Create `UserProgress` table (hanja_id, word_id, importance_level).
+- [ ] **Repository Update**: Add `update_importance(id, delta)` method.
+- [ ] **Quiz Logic Upgrade**:
+    - Modify `generate_quiz` to support filtering/weighting by `importance_level`.
+    - Add "Importance Review" mode.
+- [ ] **UI Update**:
+    - Display importance level in quiz and list views.
+    - Add quiz option to select importance level range.
+    - Visual feedback for importance change (+1/-1).
 
 ## Current Status
-- Backend and Data processing complete.
-- Basic Streamlit app running.
-- Ready to upgrade to advanced Quiz UI (Phase 7).
+- Mistake tracking implemented.
+- Ready to implement Importance-based Learning (Phase 9).
