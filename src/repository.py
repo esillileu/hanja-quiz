@@ -1,10 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
-from src.models import HanjaInfo, UsageExample
-
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
-from src.models import HanjaInfo, UsageExample, Document, DocumentHanja, DocumentWord, HanjaReading
+from sqlalchemy.sql import func
+from src.models import HanjaInfo, UsageExample, Document, DocumentHanja, DocumentWord, HanjaReading, RefHanja, RefHanjaReading, UserProgress
 
 class HanjaRepository:
     def __init__(self):
@@ -84,6 +81,45 @@ class HanjaRepository:
             doc_word = DocumentWord(document_id=document_id, word_id=word.id, frequency=1)
             session.add(doc_word)
         return doc_word
+
+    def get_user_progress(self, session, hanja_id: int = None, word_id: int = None) -> UserProgress:
+        if hanja_id:
+            return session.query(UserProgress).filter_by(hanja_id=hanja_id).first()
+        elif word_id:
+            return session.query(UserProgress).filter_by(word_id=word_id).first()
+        return None
+
+    def update_importance_level(self, session, hanja_id: int = None, word_id: int = None, change: int = 0) -> UserProgress:
+        if not (hanja_id or word_id):
+            raise ValueError("Either hanja_id or word_id must be provided.")
+
+        if hanja_id:
+            progress = session.query(UserProgress).filter_by(hanja_id=hanja_id).first()
+            if not progress:
+                progress = UserProgress(hanja_id=hanja_id, importance_level=max(0, change))
+                session.add(progress)
+            else:
+                progress.importance_level = max(0, progress.importance_level + change)
+        elif word_id:
+            progress = session.query(UserProgress).filter_by(word_id=word_id).first()
+            if not progress:
+                progress = UserProgress(word_id=word_id, importance_level=max(0, change))
+                session.add(progress)
+            else:
+                progress.importance_level = max(0, progress.importance_level + change)
+        
+        session.flush()
+        return progress
+
+    def get_all_user_progress(self, session, min_importance: int = 0):
+        query = session.query(UserProgress).filter(UserProgress.importance_level >= min_importance)
+        return query.order_by(UserProgress.importance_level.desc(), UserProgress.last_tested_at.asc()).all()
+    
+    def get_user_progress_hanja(self, session, hanja_id: int) -> UserProgress:
+        return session.query(UserProgress).filter_by(hanja_id=hanja_id).first()
+
+    def get_user_progress_word(self, session, word_id: int) -> UserProgress:
+        return session.query(UserProgress).filter_by(word_id=word_id).first()
 
     def get_all_hanja_info(self, session):
         return session.query(HanjaInfo).all()

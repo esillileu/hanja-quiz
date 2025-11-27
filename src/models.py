@@ -112,6 +112,23 @@ class DocumentWord(Base):
     document = relationship("Document", back_populates="word_occurrences")
     word = relationship("UsageExample", back_populates="occurrences")
 
+class UserProgress(Base):
+    """Tracks user's learning progress for Hanja and Words, including importance level."""
+    __tablename__ = "user_progress"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    hanja_id = Column(Integer, ForeignKey("hanja_info.id"), nullable=True, unique=True) # Hanja and word progress are mutually exclusive and unique
+    word_id = Column(Integer, ForeignKey("usage_examples.id"), nullable=True, unique=True) # Hanja and word progress are mutually exclusive and unique
+    importance_level = Column(Integer, default=0) # 0: new, 1+: needs review (higher = more important)
+    last_tested_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    hanja = relationship("HanjaInfo")
+    word = relationship("UsageExample")
+
+    def __repr__(self):
+        target = self.hanja.char if self.hanja else (self.word.word if self.word else "Unknown")
+        return f"<UserProgress(target='{target}', importance_level={self.importance_level})>"
+
 def init_db(db_url="sqlite:///hanja.db"):
     from sqlalchemy import create_engine
     engine = create_engine(db_url)
