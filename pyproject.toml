@@ -1,0 +1,15 @@
+[project]
+name = "hanja-extractor"
+version = "0.1.0"
+description = "Extract Hanja and words from documents, storing meanings, sounds, and radicals in SQLite."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "sqlalchemy>=2.0.0",
+    "hanja>=0.13.3",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+]
