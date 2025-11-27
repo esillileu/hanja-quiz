@@ -21,14 +21,20 @@ Extract Hanja characters and words from documents, creating a local SQLite datab
 ### Phase 2: Core Implementation
 - [x] **Models**: Implement SQLAlchemy models in `src/models.py`
 - [x] **Dictionary**: Implement Hanja info lookup (sound, meaning, radical) in `src/dictionary.py`
-- [ ] **Extractor**: Implement Regex-based text parsing in `src/extractor.py`
-- [ ] **Repository**: Implement DB operations in `src/repository.py`
+- [x] **Extractor**: Implement Regex-based text parsing in `src/extractor.py`
+- [x] **Repository**: Implement DB operations in `src/repository.py`
 
 ### Phase 3: Integration
-- [ ] **Pipeline**: Connect components in `main.py`
-- [ ] **Testing**: Verify with sample text
+- [x] **Pipeline**: Connect components in `main.py`
+- [x] **Testing**: Verify with sample text
+
+### Phase 4: Multi-Source Support
+- [x] **File Reader**: Create `src/reader.py` to handle various file inputs.
+- [x] **Text Loader**: Implement plain text (`.txt`) file reading.
+- [x] **PDF Loader**: Implement PDF (`.pdf`) text extraction using `pypdf`.
+- [x] **CLI Arguments**: Update `main.py` to accept file paths via command line arguments (using `argparse`).
 
 ## Current Status
-- Project initialized.
-- Schema designed.
-- Ready to implement models.
+- Multi-source support implemented and verified with text files.
+- PDF reading logic in place (requires PDF file for testing).
+- Project is fully functional for defined scope.
