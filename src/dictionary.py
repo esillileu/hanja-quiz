@@ -41,10 +41,18 @@ class HanjaDictionary:
         """
         hanja 라이브러리를 사용하여 한자의 음을 가져옵니다.
         """
-        # hanja.split_hanja는 한자의 음을 리스트로 반환합니다.
-        # 예: [('漢', '한')]
-        result = hanja.split_hanja(char)
-        if result and isinstance(result, list) and len(result) > 0:
-             # result[0] -> ('漢', '한')
-            return result[0][1] 
-        return ""
+        return hanja.translate(char, mode='substitution')
+
+    def get_word_sound(self, word: str) -> str:
+        """
+        한자 단어(2글자 이상)의 음(한글)을 반환합니다.
+        
+        Args:
+            word (str): 한자 단어.
+            
+        Returns:
+            str: 한글 발음.
+        """
+        return hanja.translate(word, mode='substitution')
+
+    
