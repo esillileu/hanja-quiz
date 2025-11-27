@@ -5,6 +5,9 @@ build/
 dist/
 wheels/
 *.egg-info
+hanja.db
+debug_hanja.py
+tests/test_extractor.py
 
 # Virtual environments
 .venv
