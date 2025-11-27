@@ -125,6 +125,74 @@ class HanjaRepository:
     def get_user_progress_word(self, session, word_id: int) -> UserProgress:
         return session.query(UserProgress).filter_by(word_id=word_id).first()
 
+    def get_flat_progress(self, session):
+        """
+        Returns a flat list of user progress for CSV export.
+        Format: [{'type': 'hanja'/'word', 'target': char/word, 'meaning_sound': ..., 'importance_level': ...}]
+        """
+        results = []
+        
+        # 1. Hanja Progress
+        hanja_progress = session.query(UserProgress).filter(UserProgress.hanja_id != None).all()
+        for up in hanja_progress:
+            if up.hanja:
+                reading = up.hanja.readings[0] if up.hanja.readings else None
+                meaning_sound = f"{reading.meaning} {reading.sound}" if reading else ""
+                results.append({
+                    'type': 'hanja',
+                    'target': up.hanja.char,
+                    'meaning_sound': meaning_sound,
+                    'importance_level': up.importance_level
+                })
+        
+        # 2. Word Progress
+        word_progress = session.query(UserProgress).filter(UserProgress.word_id != None).all()
+        for up in word_progress:
+            if up.word:
+                results.append({
+                    'type': 'word',
+                    'target': up.word.word,
+                    'meaning_sound': up.word.sound or "",
+                    'importance_level': up.importance_level
+                })
+                
+        return results
+
+    def import_progress_data(self, session, data_list):
+        """
+        Imports progress data from a list of dicts.
+        Updates existing UserProgress or creates new ones if Hanja/Word exists.
+        """
+        count = 0
+        for item in data_list:
+            target = item.get('target')
+            p_type = item.get('type')
+            level = int(item.get('importance_level', 5))
+            
+            if not target or not p_type:
+                continue
+                
+            if p_type == 'hanja':
+                hanja = session.query(HanjaInfo).filter_by(char=target).first()
+                if hanja:
+                    up = session.query(UserProgress).filter_by(hanja_id=hanja.id).first()
+                    if up:
+                        up.importance_level = level
+                    else:
+                        session.add(UserProgress(hanja_id=hanja.id, importance_level=level))
+                    count += 1
+            elif p_type == 'word':
+                word = session.query(UsageExample).filter_by(word=target).first()
+                if word:
+                    up = session.query(UserProgress).filter_by(word_id=word.id).first()
+                    if up:
+                        up.importance_level = level
+                    else:
+                        session.add(UserProgress(word_id=word.id, importance_level=level))
+                    count += 1
+        session.commit()
+        return count
+
     def get_all_hanja_info(self, session):
         return session.query(HanjaInfo).all()
 

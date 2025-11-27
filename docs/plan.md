@@ -51,22 +51,25 @@ Extract Hanja characters and words from documents, creating a local SQLite datab
 - [x] **Quiz UI**: Interactive quiz interface.
 
 ### Phase 8: Incorrect Answer Note (Mistake Tracker)
-- [x] **Schema Update**: Create `WrongAnswer` table.
-- [x] **Repository Update**: Add methods to record wrong answers (`record_mistake`).
+- [x] **Schema Update**: Create `UserProgress` table.
+- [x] **Repository Update**: Add methods to record progress.
 - [x] **Quiz Logic Upgrade**: Add "Mistake Review" mode.
-- [x] **UI Update**: Add "오답노트" tab and "오답 복습" quiz mode.
+- [x] **UI Update**: Add "학습 현황" tab.
 
-### Phase 9: Importance-based Learning (New)
-- [ ] **Schema Update**: Create `UserProgress` table (hanja_id, word_id, importance_level).
-- [ ] **Repository Update**: Add `update_importance(id, delta)` method.
-- [ ] **Quiz Logic Upgrade**:
-    - Modify `generate_quiz` to support filtering/weighting by `importance_level`.
-    - Add "Importance Review" mode.
+### Phase 9: Importance-based Learning (SRS)
+- [x] **Logic Update**: Default importance 5, correct -1, wrong +1.
+- [x] **Quiz Algorithm**: Weighted probability based on importance.
+- [x] **UI Improvements**: "학습 현황" tab improvements, feedback visualization.
+
+### Phase 10: Data Backup & Restore (New)
+- [ ] **Repository Update**:
+    - `get_flat_progress()`: Returns list of dicts for CSV export.
+    - `import_progress_data(data)`: Updates/Creates progress from list of dicts.
 - [ ] **UI Update**:
-    - Display importance level in quiz and list views.
-    - Add quiz option to select importance level range.
-    - Visual feedback for importance change (+1/-1).
+    - Add "데이터 관리" section in Sidebar.
+    - Add "Export to CSV" button.
+    - Add "Import from CSV" file uploader.
 
 ## Current Status
-- Mistake tracking implemented.
-- Ready to implement Importance-based Learning (Phase 9).
+- Full SRS learning system implemented.
+- Ready to implement Data Backup/Restore (Phase 10).
